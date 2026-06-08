@@ -24,8 +24,8 @@ body{background:#111122;min-height:100vh;display:flex;justify-content:center;pad
 .url-row input:focus{border-color:#7F77DD;}
 .url-row button{font-size:12px;padding:7px 16px;border:0.5px solid #45456a;border-radius:8px;cursor:pointer;background:#35356a;color:#c0c0e0;white-space:nowrap;display:flex;align-items:center;gap:5px;}
 .url-row button:hover{background:#45458a;}
-.url-hint{font-size:11px;color:#606080;margin-top:6px;}
-.err-box{background:#2a1a1a;border:0.5px solid #5a2a2a;border-radius:8px;padding:8px 12px;font-size:11px;color:#cc8888;margin-top:8px;display:none;line-height:1.5;}
+.url-hint{font-size:11px;color:#606080;margin-top:6px;line-height:1.6;}
+.err-box{background:#2a1a1a;border:0.5px solid #5a2a2a;border-radius:8px;padding:8px 12px;font-size:11px;color:#cc8888;margin-top:8px;display:none;line-height:1.6;}
 .mrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1rem;}
 .mc{background:#252540;border-radius:10px;padding:0.9rem 1rem;}
 .mc-lbl{font-size:11px;color:#9090aa;margin-bottom:3px;display:flex;align-items:center;gap:4px;}
@@ -55,12 +55,7 @@ body{background:#111122;min-height:100vh;display:flex;justify-content:center;pad
 .wi-res-item{text-align:center;}
 .wi-res-lbl{font-size:11px;color:#9090aa;margin-bottom:3px;}
 .wi-res-val{font-size:17px;font-weight:500;}
-@media(max-width:600px){
-  .cg{grid-template-columns:1fr;}
-  .cc.full{grid-column:1;}
-  .wi-grid{grid-template-columns:1fr;}
-  body{padding:0.75rem;}
-}
+@media(max-width:600px){.cg{grid-template-columns:1fr;}.cc.full{grid-column:1;}.wi-grid{grid-template-columns:1fr;}body{padding:0.75rem;}}
 </style>
 </head>
 <body>
@@ -71,12 +66,15 @@ body{background:#111122;min-height:100vh;display:flex;justify-content:center;pad
   </div>
 
   <div class="url-box">
-    <p class="url-lbl"><i class="ti ti-code" style="font-size:14px"></i>Conectar via Apps Script</p>
+    <p class="url-lbl"><i class="ti ti-code" style="font-size:14px"></i>Conectar fonte de dados</p>
     <div class="url-row">
-      <input type="text" id="sheetUrl" placeholder="Cole aqui a URL do Apps Script implantado..."/>
+      <input type="text" id="sheetUrl" placeholder="Cole a URL do Cloudflare Worker com ?url=... ou direto do Apps Script"/>
       <button onclick="connectSheet()"><i class="ti ti-plug" style="font-size:13px"></i>Conectar</button>
     </div>
-    <p class="url-hint">Apps Script → Implantar → Nova implantação → Aplicativo da Web → Qualquer pessoa → copie a URL</p>
+    <p class="url-hint">
+      Formato: <strong>https://seu-worker.workers.dev?url=https://script.google.com/macros/s/.../exec</strong><br>
+      Crie o worker gratuito em <strong>workers.cloudflare.com</strong> e use a URL acima para conectar.
+    </p>
     <div class="err-box" id="errBox"></div>
   </div>
 
@@ -87,32 +85,16 @@ body{background:#111122;min-height:100vh;display:flex;justify-content:center;pad
       <p class="mc-sub2" id="mMedia">Média mensal: —</p>
       <p class="mc-sub">todos os meses</p>
     </div>
-    <div class="mc hi">
-      <p class="mc-lbl"><i class="ti ti-building" style="font-size:13px"></i>Maior setor</p>
-      <p class="mc-val" id="mTopSetor">—</p>
-      <p class="mc-sub" id="mTopSetorVal">—</p>
-    </div>
-    <div class="mc pk">
-      <p class="mc-lbl"><i class="ti ti-tag" style="font-size:13px"></i>Maior categoria</p>
-      <p class="mc-val" id="mTopCat">—</p>
-      <p class="mc-sub" id="mTopCatVal">—</p>
-    </div>
-    <div class="mc warn">
-      <p class="mc-lbl"><i class="ti ti-calendar" style="font-size:13px"></i>Último mês</p>
-      <p class="mc-val" id="mUltMes">—</p>
-      <p class="mc-sub" id="mUltMesVal">—</p>
-    </div>
+    <div class="mc hi"><p class="mc-lbl"><i class="ti ti-building" style="font-size:13px"></i>Maior setor</p><p class="mc-val" id="mTopSetor">—</p><p class="mc-sub" id="mTopSetorVal">—</p></div>
+    <div class="mc pk"><p class="mc-lbl"><i class="ti ti-tag" style="font-size:13px"></i>Maior categoria</p><p class="mc-val" id="mTopCat">—</p><p class="mc-sub" id="mTopCatVal">—</p></div>
+    <div class="mc warn"><p class="mc-lbl"><i class="ti ti-calendar" style="font-size:13px"></i>Último mês</p><p class="mc-val" id="mUltMes">—</p><p class="mc-sub" id="mUltMesVal">—</p></div>
   </div>
 
   <div class="cc full" style="margin-bottom:12px">
     <p class="cc-lbl"><i class="ti ti-target" style="color:#EF9F27"></i>Consumo do orçamento anual <span style="color:#606080;font-weight:400;margin-left:6px">Teto: R$ 81.600.000</span></p>
     <div style="margin:8px 0 4px">
       <div class="orc-track"><div class="orc-fill" id="orcFill" style="width:0%;background:#1D9E75">0%</div></div>
-      <div class="orc-labels">
-        <span id="orcGasto">Gasto: R$ 0</span>
-        <span id="orcRestante">Disponível: R$ 81.600.000</span>
-        <span id="orcPct" style="color:#EF9F27">0% consumido</span>
-      </div>
+      <div class="orc-labels"><span id="orcGasto">Gasto: R$ 0</span><span id="orcRestante">Disponível: R$ 81.600.000</span><span id="orcPct" style="color:#EF9F27">0% consumido</span></div>
     </div>
     <div style="position:relative;height:90px;margin-top:8px"><canvas id="chartOrc"></canvas></div>
   </div>
@@ -184,7 +166,7 @@ function fmtFull(v){return 'R$ '+Math.round(v).toLocaleString('pt-BR');}
 function norm(s){return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
 function findVal(obj,candidates){
   const keys=Object.keys(obj);
-  for(const c of candidates){const f=keys.find(k=>norm(k)===norm(c)||norm(k).includes(norm(c)));if(f!==undefined&&obj[f]!==undefined&&obj[f]!=='')return obj[f];}
+  for(const c of candidates){const f=keys.find(k=>norm(k)===norm(c)||norm(k).includes(norm(c)));if(f!==undefined&&obj[f]!==undefined&&String(obj[f])!=='')return obj[f];}
   return '';
 }
 
@@ -200,53 +182,26 @@ function parseRows(arr){
   }).filter(r=>r.mes&&r.setor&&r.cat&&r.valor>0);
 }
 
-// JSONP: cria tag <script> dinamicamente para contornar CORS do Google Apps Script
-function fetchJSONP(url){
-  return new Promise((resolve,reject)=>{
-    const cbName='__cb_'+Date.now()+'_'+Math.round(Math.random()*1e6);
-    const timeout=setTimeout(()=>{
-      delete window[cbName];
-      const s=document.getElementById(cbName);
-      if(s)s.remove();
-      reject(new Error('Timeout — verifique se a URL está correta e implantada como "Qualquer pessoa"'));
-    },15000);
-
-    window[cbName]=function(data){
-      clearTimeout(timeout);
-      delete window[cbName];
-      const s=document.getElementById(cbName);
-      if(s)s.remove();
-      resolve(data);
-    };
-
-    const script=document.createElement('script');
-    script.id=cbName;
-    // Adiciona ?callback=nomeDaFuncao à URL
-    const sep=url.includes('?')?'&':'?';
-    script.src=url+sep+'callback='+cbName;
-    script.onerror=()=>{
-      clearTimeout(timeout);
-      delete window[cbName];
-      script.remove();
-      reject(new Error('Erro ao carregar o script — verifique a URL do Apps Script'));
-    };
-    document.head.appendChild(script);
-  });
-}
-
 async function fetchData(rawUrl){
   const url=rawUrl.trim();
   try{
-    const data=await fetchJSONP(url);
-    let arr=null;
-    if(Array.isArray(data))arr=data;
-    else if(data&&typeof data==='object'){const k=Object.keys(data).find(k=>Array.isArray(data[k]));if(k)arr=data[k];}
-    if(!arr)return{data:null,error:'Resposta inesperada do Apps Script. Verifique se o código retorna um array JSON.'};
-    const rows=parseRows(arr);
-    if(!rows.length)return{data:null,error:'Nenhum dado válido encontrado. Verifique se as colunas são: Mês, Setor, Categoria, Valor.'};
-    return{data:rows,error:null};
+    const res=await fetch(url,{redirect:'follow'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const text=await res.text();
+    const t=text.trim();
+    if(t.startsWith('[')||t.startsWith('{')){
+      const json=JSON.parse(t);
+      let arr=Array.isArray(json)?json:null;
+      if(!arr){const k=Object.keys(json).find(k=>Array.isArray(json[k]));if(k)arr=json[k];}
+      if(arr){
+        const rows=parseRows(arr);
+        if(rows.length)return{data:rows,error:null};
+        return{data:null,error:'Dados recebidos mas nenhuma linha válida encontrada. Verifique os nomes das colunas: Mês, Setor, Categoria, Valor.'};
+      }
+    }
+    return{data:null,error:'Resposta não reconhecida. Certifique-se de que o Cloudflare Worker está retornando o JSON do Apps Script corretamente.'};
   }catch(e){
-    return{data:null,error:e.message};
+    return{data:null,error:'Falha ao buscar dados: '+e.message};
   }
 }
 
@@ -353,17 +308,12 @@ function setStatus(state,text){
   document.getElementById('statusDot').className='dot'+(state==='ok'?'':state==='loading'?' loading':' error');
   document.getElementById('statusText').textContent=text;
 }
-
-function showErr(msg){
-  const b=document.getElementById('errBox');
-  b.style.display=msg?'block':'none';
-  b.innerHTML=msg||'';
-}
+function showErr(msg){const b=document.getElementById('errBox');b.style.display=msg?'block':'none';b.innerHTML=msg||'';}
 
 function connectSheet(){
   const raw=document.getElementById('sheetUrl').value.trim();
-  if(!raw){setStatus('error','Cole a URL do Apps Script primeiro');return;}
-  showErr('');setStatus('loading','Conectando via JSONP...');
+  if(!raw){setStatus('error','Cole a URL primeiro');return;}
+  showErr('');setStatus('loading','Conectando...');
   if(refreshInterval)clearInterval(refreshInterval);
   const load=async()=>{
     const{data,error}=await fetchData(raw);
@@ -377,7 +327,7 @@ function connectSheet(){
 }
 
 allData=DEMO;populateFilters(allData);renderAll();
-setStatus('ok','Dados de demonstração — cole a URL do Apps Script para conectar');
+setStatus('ok','Dados de demonstração — configure o Cloudflare Worker e conecte');
 </script>
 </body>
 </html>
