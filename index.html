@@ -71,12 +71,12 @@ body{background:#111122;min-height:100vh;display:flex;justify-content:center;pad
   </div>
 
   <div class="url-box">
-    <p class="url-lbl"><i class="ti ti-code" style="font-size:14px"></i>Conectar via Apps Script (JSON)</p>
+    <p class="url-lbl"><i class="ti ti-code" style="font-size:14px"></i>Conectar via Apps Script</p>
     <div class="url-row">
       <input type="text" id="sheetUrl" placeholder="Cole aqui a URL do Apps Script implantado..."/>
       <button onclick="connectSheet()"><i class="ti ti-plug" style="font-size:13px"></i>Conectar</button>
     </div>
-    <p class="url-hint">Apps Script → Implantar → Nova implantação → Aplicativo da Web → Quem tem acesso: Qualquer pessoa → copie a URL</p>
+    <p class="url-hint">Apps Script → Implantar → Nova implantação → Aplicativo da Web → Qualquer pessoa → copie a URL</p>
     <div class="err-box" id="errBox"></div>
   </div>
 
@@ -188,14 +188,10 @@ function findVal(obj,candidates){
   return '';
 }
 
-function parseJSON(raw){
-  let arr=null;
-  if(Array.isArray(raw))arr=raw;
-  else if(raw&&typeof raw==='object'){const k=Object.keys(raw).find(k=>Array.isArray(raw[k]));if(k)arr=raw[k];}
-  if(!arr||!arr.length)return[];
+function parseRows(arr){
   return arr.map(row=>{
     const mes=String(findVal(row,['mes','mês','month','competencia','periodo'])||'').trim();
-    const setor=String(findVal(row,['setor','sector','unidade','departamento'])||'').trim();
+    const setor=String(findVal(row,['setor','sector','unidade'])||'').trim();
     const cat=String(findVal(row,['categoria','cat','category','tipo'])||'').trim();
     const rawVal=findVal(row,['valor','value','gasto','custo','total','vl','vlr']);
     const valStr=String(rawVal||'').replace(/[R$\s]/g,'').replace(/\./g,'').replace(',','.');
@@ -204,42 +200,53 @@ function parseJSON(raw){
   }).filter(r=>r.mes&&r.setor&&r.cat&&r.valor>0);
 }
 
-function parseCSV(text){
-  const clean=text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
-  const lines=clean.split('\n').filter(l=>l.trim());
-  if(lines.length<2)return[];
-  const headers=lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim());
-  return lines.slice(1).map(line=>{
-    const fields=[];let cur='',inQ=false;
-    for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){fields.push(cur);cur='';}else{cur+=ch;}}
-    fields.push(cur);
-    const obj={};headers.forEach((h,i)=>obj[h]=(fields[i]||'').replace(/^"|"$/g,'').trim());
-    const mes=String(findVal(obj,['mes','mês','month'])||'').trim();
-    const setor=String(findVal(obj,['setor','sector'])||'').trim();
-    const cat=String(findVal(obj,['categoria','cat','category'])||'').trim();
-    const rawVal=findVal(obj,['valor','value','gasto','custo','total']);
-    const valStr=String(rawVal||'').replace(/[R$\s]/g,'').replace(/\./g,'').replace(',','.');
-    const valor=parseFloat(valStr)||0;
-    return{mes,setor,cat,valor};
-  }).filter(r=>r.mes&&r.setor&&r.cat&&r.valor>0);
+// JSONP: cria tag <script> dinamicamente para contornar CORS do Google Apps Script
+function fetchJSONP(url){
+  return new Promise((resolve,reject)=>{
+    const cbName='__cb_'+Date.now()+'_'+Math.round(Math.random()*1e6);
+    const timeout=setTimeout(()=>{
+      delete window[cbName];
+      const s=document.getElementById(cbName);
+      if(s)s.remove();
+      reject(new Error('Timeout — verifique se a URL está correta e implantada como "Qualquer pessoa"'));
+    },15000);
+
+    window[cbName]=function(data){
+      clearTimeout(timeout);
+      delete window[cbName];
+      const s=document.getElementById(cbName);
+      if(s)s.remove();
+      resolve(data);
+    };
+
+    const script=document.createElement('script');
+    script.id=cbName;
+    // Adiciona ?callback=nomeDaFuncao à URL
+    const sep=url.includes('?')?'&':'?';
+    script.src=url+sep+'callback='+cbName;
+    script.onerror=()=>{
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      reject(new Error('Erro ao carregar o script — verifique a URL do Apps Script'));
+    };
+    document.head.appendChild(script);
+  });
 }
 
 async function fetchData(rawUrl){
   const url=rawUrl.trim();
   try{
-    const res=await fetch(url,{redirect:'follow'});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const text=await res.text();
-    const trimmed=text.trim();
-    if(trimmed.startsWith('[')||trimmed.startsWith('{')){
-      try{const json=JSON.parse(trimmed);const data=parseJSON(json);if(data.length)return{data,error:null};}catch(_){}
-    }
-    if(!trimmed.includes('<!DOCTYPE')){
-      const data=parseCSV(trimmed);if(data.length)return{data,error:null};
-    }
-    return{data:null,error:'Resposta recebida mas nenhum dado válido encontrado. Verifique se as colunas são: Mês, Setor, Categoria, Valor.'};
+    const data=await fetchJSONP(url);
+    let arr=null;
+    if(Array.isArray(data))arr=data;
+    else if(data&&typeof data==='object'){const k=Object.keys(data).find(k=>Array.isArray(data[k]));if(k)arr=data[k];}
+    if(!arr)return{data:null,error:'Resposta inesperada do Apps Script. Verifique se o código retorna um array JSON.'};
+    const rows=parseRows(arr);
+    if(!rows.length)return{data:null,error:'Nenhum dado válido encontrado. Verifique se as colunas são: Mês, Setor, Categoria, Valor.'};
+    return{data:rows,error:null};
   }catch(e){
-    return{data:null,error:'Falha ao acessar a URL: '+e.message};
+    return{data:null,error:e.message};
   }
 }
 
@@ -356,7 +363,7 @@ function showErr(msg){
 function connectSheet(){
   const raw=document.getElementById('sheetUrl').value.trim();
   if(!raw){setStatus('error','Cole a URL do Apps Script primeiro');return;}
-  showErr('');setStatus('loading','Conectando...');
+  showErr('');setStatus('loading','Conectando via JSONP...');
   if(refreshInterval)clearInterval(refreshInterval);
   const load=async()=>{
     const{data,error}=await fetchData(raw);
@@ -369,7 +376,6 @@ function connectSheet(){
   refreshInterval=setInterval(load,60000);
 }
 
-// Inicia com demo
 allData=DEMO;populateFilters(allData);renderAll();
 setStatus('ok','Dados de demonstração — cole a URL do Apps Script para conectar');
 </script>
