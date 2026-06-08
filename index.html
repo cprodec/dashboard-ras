@@ -111,10 +111,13 @@ body{background:#111122;min-height:100vh;display:flex;justify-content:center;pad
     </div>
   </div>
 
-  <div class="frow">
-    <select id="filterMes" onchange="renderAll()"><option value="">Todos os meses</option></select>
-    <select id="filterSetor" onchange="renderAll()"><option value="">Todos os setores</option></select>
-    <select id="filterCat" onchange="renderAll()"><option value="">Todas as categorias</option></select>
+  <div style="background:#252540;border:0.5px solid #35355a;border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;">
+    <p style="font-size:11px;color:#9090aa;margin-bottom:8px"><i class="ti ti-filter" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Filtros</p>
+    <div class="frow" style="margin-bottom:0">
+      <select id="filterMes" onchange="renderAll()"><option value="">Todos os meses</option></select>
+      <select id="filterSetor" onchange="renderAll()"><option value="">Todos os setores</option></select>
+      <select id="filterCat" onchange="renderAll()"><option value="">Todas as categorias</option></select>
+    </div>
   </div>
 
   <div class="cg">
