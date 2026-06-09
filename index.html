@@ -55,6 +55,7 @@ body{background:#111122;min-height:100vh;display:flex;justify-content:center;pad
 .wi-res-lbl{font-size:11px;color:#9090aa;margin-bottom:3px;}
 .wi-res-val{font-size:17px;font-weight:500;}
 @media(max-width:600px){.cg{grid-template-columns:1fr;}.cc.full{grid-column:1;}.wi-grid{grid-template-columns:1fr;}body{padding:0.75rem;}}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-bottom:1rem;}
 </style>
 </head>
 <body>
@@ -145,6 +146,10 @@ body{background:#111122;min-height:100vh;display:flex;justify-content:center;pad
       <div id="legendStacked" class="leg"></div>
       <div style="position:relative;height:225px"><canvas id="chartStacked"></canvas></div>
     </div>
+  </div>
+  <div style="margin-top:4px">
+    <p style="font-size:13px;font-weight:500;color:#9090aa;margin-bottom:12px"><i class="ti ti-chart-bar" style="font-size:15px;vertical-align:-2px;margin-right:5px;color:#7F77DD"></i>Evolução mensal por setor e categoria</p>
+    <div class="sg" id="setorCards"></div>
   </div>
 </div>
 
@@ -365,9 +370,66 @@ function renderStacked(data) {
   });
 }
 
+function renderSetorCards(data) {
+  const setores = [...new Set(allData.map(r=>r.setor))];
+  const meses   = [...new Set(allData.map(r=>r.mes))];
+  const activeCats = CATS.filter(c => data.some(r=>r.cat===c));
+  const wrap = document.getElementById('setorCards');
+
+  // Cria cards se ainda não existem
+  if (wrap.children.length !== setores.length) {
+    wrap.innerHTML = '';
+    setores.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'cc';
+      card.innerHTML = `
+        <p class="cc-lbl" style="color:#c0c0e0;font-weight:500">${s}</p>
+        <div id="leg_${s.replace(/\s/g,'_')}" class="leg"></div>
+        <div style="position:relative;height:180px"><canvas id="chart_${s.replace(/\s/g,'_')}"></canvas></div>`;
+      wrap.appendChild(card);
+    });
+  }
+
+  setores.forEach(s => {
+    const key = 'sc_' + s.replace(/\s/g,'_');
+    if (charts[key]) { charts[key].destroy(); charts[key] = null; }
+
+    const sid = s.replace(/\s/g,'_');
+    const legEl = document.getElementById('leg_'+sid);
+    const canvasEl = document.getElementById('chart_'+sid);
+    if (!legEl || !canvasEl) return;
+
+    const ds = activeCats.map(cat => ({
+      label: cat,
+      backgroundColor: CAT_COLORS[cat],
+      borderColor: '#1a1a2e',
+      borderWidth: 1,
+      data: meses.map(m => data.filter(r=>r.setor===s&&r.mes===m&&r.cat===cat).reduce((a,r)=>a+r.valor,0))
+    }));
+
+    legEl.innerHTML = [...activeCats].reverse().map(c=>`<span><span class="lsq" style="background:${CAT_COLORS[c]}"></span>${c}</span>`).join('');
+
+    charts[key] = new Chart(canvasEl, {
+      type: 'bar',
+      data: { labels: meses, datasets: ds },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.parsed.y) } }
+        },
+        scales: {
+          x: { stacked: true, ticks: { color:'#606080', font:{size:10}, maxRotation:30 }, grid: { display:false } },
+          y: { stacked: true, ticks: { color:'#606080', font:{size:11}, callback: v=>fmtK(v) }, grid: { color:'rgba(255,255,255,0.06)' } }
+        }
+      }
+    });
+  });
+}
+
 function renderAll() {
   const f = getFiltered();
-  renderMetrics(f); renderLine(f); renderDough(f); renderStacked(f);
+  renderMetrics(f); renderLine(f); renderDough(f); renderStacked(f); renderSetorCards(f);
 }
 
 // ── Status / Erros ───────────────────────────────────────────
